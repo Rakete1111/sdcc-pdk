@@ -36,44 +36,64 @@
 int
 addr(struct expr *esp)
 {
-        int c = getnb();
+        int c = getnb(), c1;
 
-        if (c == '#') {
+        switch (c) {
+        case '#':
                 /* Immediate mode */
                 expr(esp, 0);
                 esp->e_mode = S_K;
-        } else
-        if (c == 'o' && ((c = getnb()) == 'v' || (unget(c), 0))) {
-                /* OV bit of ACC flag */
-                esp->e_mode = S_K;
-                esp->e_addr = 3;
-        } else
-        if (c == 'a' && ((c = getnb()) == 'c' || (unget(c), 0))) {
-                /* AC bit of ACC flag */
-                esp->e_mode = S_K;
-                esp->e_addr = 2;
-        } else
-        if (c == 's' && ((c = getnb()) == 'p' || (unget(c), 0))) {
-                /* Stack */
-                esp->e_mode = S_IO;
-                esp->e_addr = 2;
-        } else
-        if (c == 'a') {
+                break;
+
+        case 'o':
+                if ((c1 = getnb()) == 'v') {
+                        /* OV bit of ACC flag */
+                        esp->e_mode = S_K;
+                        esp->e_addr = 3;
+                        break;
+                }
+                unget(c1);
+                goto fallback;
+
+        case 'a':
+                if ((c1 = getnb()) == 'c') {
+                        /* AC bit of ACC flag */
+                        esp->e_mode = S_K;
+                        esp->e_addr = 2;
+                        break;
+                }
+                unget(c1);
+
                 /* Accumulator */
                 esp->e_mode = S_A;
-        } else
-        if (c == 'c') {
+                break;
+
+        case 's':
+                if ((c1 = getnb()) == 'p') {
+                        /* Stack (SP) */
+                        esp->e_mode = S_IO;
+                        esp->e_addr = 2;
+                        break;
+                }
+                unget(c1);
+                goto fallback;
+
+        case 'c':
                 /* C bit of ACC flag */
                 esp->e_mode = S_K;
                 esp->e_addr = 1;
-        } else
-        if (c == 'z') {
+                break;
+
+        case 'z':
                 /* Z bit of ACC flag */
                 esp->e_mode = S_K;
                 esp->e_addr = 0;
-        }
-        else {
+                break;
+
+        default:
+        fallback:
                 unget(c);
+
                 /* Memory address */
                 expr(esp, 0);
                 esp->e_mode = S_M;
