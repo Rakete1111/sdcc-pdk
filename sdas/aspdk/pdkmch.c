@@ -333,10 +333,23 @@ machine(struct mne *mp)
                 outaw(op);
                 break;
 
+        case S_XCH:
+                t = addr(&e);
+                if (t == S_A) {
+                        /* Ignore extra accumulator param. */
+                        comma(1);
+                        t = addr(&e);
+                }
+                if (t != S_M)
+                        aerr();
+
+                op |= e.e_addr & 0x7F;
+                outaw(op);
+                break;
+
         /* Simple instructions consisting of only one opcode and no args */
         case S_LDT16:
         case S_STT16:
-        case S_XCH:
         case S_PUSHAF:
         case S_POPAF:
         case S_SWAP:
