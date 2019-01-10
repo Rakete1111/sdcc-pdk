@@ -329,7 +329,7 @@ machine(struct mne *mp)
         case S_CALL:
         case S_GOTO:
                 expr(&e, 0);
-                op |= e.e_addr & 0x7F;
+                op |= e.e_addr & 0xFF;
                 outaw(op);
                 break;
 
