@@ -311,7 +311,13 @@ machine(struct mne *mp)
                 break;
 
         case S_RET:
-                /* TODO: Add support for 'RET k' */
+                if (more()) {
+                        t = addr(&e);
+                        if (t != S_K)
+                                aerr();
+                        op |= e.e_addr & 0xFF;
+                }
+
                 outaw(op);
                 break;
 
