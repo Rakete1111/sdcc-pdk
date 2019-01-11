@@ -1,6 +1,6 @@
 Index: Makefile.common.in
 ===================================================================
---- Makefile.common.in	(revision 10871)
+--- Makefile.common.in	(revision 10872)
 +++ Makefile.common.in	(working copy)
 @@ -57,6 +57,7 @@
  OPT_DISABLE_TLCS90      = @OPT_DISABLE_TLCS90@
@@ -12,7 +12,7 @@ Index: Makefile.common.in
  
 Index: Makefile.in
 ===================================================================
---- Makefile.in	(revision 10871)
+--- Makefile.in	(revision 10872)
 +++ Makefile.in	(working copy)
 @@ -65,6 +65,11 @@
  SDCC_LD        += sdcc-ldgb
@@ -20,7 +20,7 @@ Index: Makefile.in
  
 +ifeq ($(OPT_DISABLE_PDK14), 0)
 +SDCC_AS        += sdas/aspdk
-+#SDCC_LD        += sdcc-ldstm8
++SDCC_LD        += sdcc-ldpdk
 +endif
 +
  ifeq ($(OPT_DISABLE_UCSIM), 0)
@@ -28,7 +28,7 @@ Index: Makefile.in
  SDCC_MISC      += sim/ucsim
 Index: configure
 ===================================================================
---- configure	(revision 10871)
+--- configure	(revision 10872)
 +++ configure	(working copy)
 @@ -8825,7 +8825,7 @@
  fi
@@ -49,7 +49,7 @@ Index: configure
      "device/non-free/lib/Makefile") CONFIG_FILES="$CONFIG_FILES device/non-free/lib/Makefile" ;;
 Index: configure.ac
 ===================================================================
---- configure.ac	(revision 10871)
+--- configure.ac	(revision 10872)
 +++ configure.ac	(working copy)
 @@ -910,7 +910,8 @@
  fi
@@ -61,6 +61,74 @@ Index: configure.ac
     test $OPT_DISABLE_DEVICE_LIB = 0 && AC_CONFIG_FILES([device/lib/pdk14/Makefile])
  fi
  
+Index: pdk14.patch
+===================================================================
+--- pdk14.patch	(nonexistent)
++++ pdk14.patch	(working copy)
+@@ -0,0 +1,63 @@
++Index: Makefile.common.in
++===================================================================
++--- Makefile.common.in	(revision 10872)
+++++ Makefile.common.in	(working copy)
++@@ -57,6 +57,7 @@
++ OPT_DISABLE_TLCS90      = @OPT_DISABLE_TLCS90@
++ OPT_DISABLE_GBZ80       = @OPT_DISABLE_GBZ80@
++ OPT_DISABLE_STM8        = @OPT_DISABLE_STM8@
+++OPT_DISABLE_PDK14       = @OPT_DISABLE_PDK14@
++ 
++ OPT_ENABLE_DOC          = @OPT_ENABLE_DOC@
++ 
++Index: Makefile.in
++===================================================================
++--- Makefile.in	(revision 10872)
+++++ Makefile.in	(working copy)
++@@ -65,6 +65,11 @@
++ SDCC_LD        += sdcc-ldgb
++ endif
++ 
+++ifeq ($(OPT_DISABLE_PDK14), 0)
+++SDCC_AS        += sdas/aspdk
+++SDCC_LD        += sdcc-ldpdk
+++endif
+++
++ ifeq ($(OPT_DISABLE_UCSIM), 0)
++ TARGETS        += sdcc-misc
++ SDCC_MISC      += sim/ucsim
++Index: configure
++===================================================================
++--- configure	(revision 10872)
+++++ configure	(working copy)
++@@ -8825,7 +8825,7 @@
++ fi
++ 
++ if test $OPT_DISABLE_PDK14 = 0; then
++-  ac_config_files="$ac_config_files src/pdk/Makefile"
+++  ac_config_files="$ac_config_files src/pdk/Makefile sdas/aspdk/Makefile"
++ 
++    test $OPT_DISABLE_DEVICE_LIB = 0 && ac_config_files="$ac_config_files device/lib/pdk14/Makefile"
++ 
++@@ -9571,6 +9571,7 @@
++     "device/lib/stm8/Makefile") CONFIG_FILES="$CONFIG_FILES device/lib/stm8/Makefile" ;;
++     "device/lib/stm8-large/Makefile") CONFIG_FILES="$CONFIG_FILES device/lib/stm8-large/Makefile" ;;
++     "src/pdk/Makefile") CONFIG_FILES="$CONFIG_FILES src/pdk/Makefile" ;;
+++    "sdas/aspdk/Makefile") CONFIG_FILES="$CONFIG_FILES sdas/aspdk/Makefile" ;;
++     "device/lib/pdk14/Makefile") CONFIG_FILES="$CONFIG_FILES device/lib/pdk14/Makefile" ;;
++     "device/lib/Makefile") CONFIG_FILES="$CONFIG_FILES device/lib/Makefile" ;;
++     "device/non-free/lib/Makefile") CONFIG_FILES="$CONFIG_FILES device/non-free/lib/Makefile" ;;
++Index: configure.ac
++===================================================================
++--- configure.ac	(revision 10872)
+++++ configure.ac	(working copy)
++@@ -910,7 +910,8 @@
++ fi
++ 
++ if test $OPT_DISABLE_PDK14 = 0; then
++-  AC_CONFIG_FILES([src/pdk/Makefile])
+++  AC_CONFIG_FILES([src/pdk/Makefile
+++                   sdas/aspdk/Makefile])
++    test $OPT_DISABLE_DEVICE_LIB = 0 && AC_CONFIG_FILES([device/lib/pdk14/Makefile])
++ fi
++ 
 Index: sdas/aspdk/Makefile.in
 ===================================================================
 --- sdas/aspdk/Makefile.in	(nonexistent)
@@ -389,7 +457,7 @@ Index: sdas/aspdk/pdkadr.c
 ===================================================================
 --- sdas/aspdk/pdkadr.c	(nonexistent)
 +++ sdas/aspdk/pdkadr.c	(working copy)
-@@ -0,0 +1,83 @@
+@@ -0,0 +1,122 @@
 +/* pdkadr.c */
 +
 +/*
@@ -428,44 +496,83 @@ Index: sdas/aspdk/pdkadr.c
 +int
 +addr(struct expr *esp)
 +{
-+        int c = getnb();
++        int c = getnb(), c1;
 +
-+        if (c == '#') {
++        switch (c) {
++        case '#':
 +                /* Immediate mode */
 +                expr(esp, 0);
 +                esp->e_mode = S_K;
-+        } else
-+        if (c == 'o' && ((c = getnb()) == 'v' || (unget(c), 0))) {
-+                /* OV bit of ACC flag */
-+                esp->e_mode = S_K;
-+                esp->e_addr = 3;
-+        } else
-+        if (c == 'a' && ((c = getnb()) == 'c' || (unget(c), 0))) {
-+                /* AC bit of ACC flag */
-+                esp->e_mode = S_K;
-+                esp->e_addr = 2;
-+        } else
-+        if (c == 's' && ((c = getnb()) == 'p' || (unget(c), 0))) {
-+                /* Stack */
-+                esp->e_mode = S_IO;
-+                esp->e_addr = 2;
-+        } else
-+        if (c == 'a') {
++                break;
++
++        case 'o':
++                if ((c1 = getnb()) == 'v') {
++                        /* OV bit of ACC flag */
++                        esp->e_mode = S_K;
++                        esp->e_addr = 3;
++                        break;
++                }
++                unget(c1);
++                goto fallback;
++
++        case 'a':
++                if ((c1 = getnb()) == 'c') {
++                        /* AC bit of ACC flag */
++                        esp->e_mode = S_K;
++                        esp->e_addr = 2;
++                        break;
++                }
++                unget(c1);
++
 +                /* Accumulator */
 +                esp->e_mode = S_A;
-+        } else
-+        if (c == 'c') {
++                break;
++
++        case 's':
++                if ((c1 = getnb()) == 'p') {
++                        /* Stack (SP) */
++                        esp->e_mode = S_IO;
++                        esp->e_addr = 2;
++                        break;
++                }
++                unget(c1);
++                goto fallback;
++
++        case 'c':
 +                /* C bit of ACC flag */
 +                esp->e_mode = S_K;
 +                esp->e_addr = 1;
-+        } else
-+        if (c == 'z') {
++                break;
++
++        case 'z':
 +                /* Z bit of ACC flag */
 +                esp->e_mode = S_K;
 +                esp->e_addr = 0;
-+        }
-+        else {
++                break;
++
++        case 'p':
++                /* Pseudo-register in memory. */
++                esp->e_mode = S_M;
++
++                /* TODO: There must be a better way to do this. */
++                if ((c1 = getnb()) == '+') {
++                        if ((c = getnb()) != '1') {
++                                unget(c);
++                                unget(c1);
++                                unget('p');
++                                goto fallback;
++                        }
++                        esp->e_addr = 1;
++                } else {
++                        unget(c1);
++                        esp->e_addr = 0;
++                }
++                break;
++
++        default:
++        fallback:
 +                unget(c);
++
 +                /* Memory address */
 +                expr(esp, 0);
 +                esp->e_mode = S_M;
@@ -477,7 +584,7 @@ Index: sdas/aspdk/pdkmch.c
 ===================================================================
 --- sdas/aspdk/pdkmch.c	(nonexistent)
 +++ sdas/aspdk/pdkmch.c	(working copy)
-@@ -0,0 +1,398 @@
+@@ -0,0 +1,417 @@
 +/* pdkmch.c */
 +
 +/*
@@ -791,7 +898,13 @@ Index: sdas/aspdk/pdkmch.c
 +                break;
 +
 +        case S_RET:
-+                /* TODO: Add support for 'RET k' */
++                if (more()) {
++                        t = addr(&e);
++                        if (t != S_K)
++                                aerr();
++                        op |= e.e_addr & 0xFF;
++                }
++
 +                outaw(op);
 +                break;
 +
@@ -809,6 +922,20 @@ Index: sdas/aspdk/pdkmch.c
 +        case S_CALL:
 +        case S_GOTO:
 +                expr(&e, 0);
++                op |= e.e_addr & 0xFF;
++                outaw(op);
++                break;
++
++        case S_XCH:
++                t = addr(&e);
++                if (t == S_A) {
++                        /* Ignore extra accumulator param. */
++                        comma(1);
++                        t = addr(&e);
++                }
++                if (t != S_M)
++                        aerr();
++
 +                op |= e.e_addr & 0x7F;
 +                outaw(op);
 +                break;
@@ -816,7 +943,6 @@ Index: sdas/aspdk/pdkmch.c
 +        /* Simple instructions consisting of only one opcode and no args */
 +        case S_LDT16:
 +        case S_STT16:
-+        case S_XCH:
 +        case S_PUSHAF:
 +        case S_POPAF:
 +        case S_SWAP:
@@ -1071,11 +1197,84 @@ Index: sdas/aspdk/pdkpst.c
 +    {   NULL,   "swapc",        S_SWAPC,        0,      0x0400    },
 +    {   NULL,   "cneqsn",       S_CNEQSN,       S_EOL,  0x0000    }
 +};
+Index: sdas/linksrc/Makefile.in
+===================================================================
+--- sdas/linksrc/Makefile.in	(revision 10872)
++++ sdas/linksrc/Makefile.in	(working copy)
+@@ -63,7 +63,7 @@
+ 
+ # Compiling entire program or any subproject
+ # ------------------------------------------
+-all: sdcc-ld8051 sdcc-ldz80 sdcc-ldgb sdcc-ld6808 sdcc-ldstm8
++all: sdcc-ld8051 sdcc-ldz80 sdcc-ldgb sdcc-ld6808 sdcc-ldstm8 sdcc-ldpdk
+ 
+ sdcc-ld8051: checkconf $(ASLINK)
+ 
+@@ -75,7 +75,9 @@
+ 
+ sdcc-ldstm8: checkconf $(top_builddir)/bin/sdldstm8$(EXEEXT)
+ 
+-$(top_builddir)/bin/sdldz80$(EXEEXT) $(top_builddir)/bin/sdldgb$(EXEEXT) $(top_builddir)/bin/sdldstm8$(EXEEXT) $(top_builddir)/bin/sdld6808$(EXEEXT): $(ASLINK)
++sdcc-ldpdk: checkconf $(top_builddir)/bin/sdldpdk$(EXEEXT)
++
++$(top_builddir)/bin/sdldz80$(EXEEXT) $(top_builddir)/bin/sdldgb$(EXEEXT) $(top_builddir)/bin/sdldstm8$(EXEEXT) $(top_builddir)/bin/sdld6808$(EXEEXT) $(top_builddir)/bin/sdldpdk$(EXEEXT): $(ASLINK)
+ 	cp -p $(ASLINK) $@
+ 
+ $(ASLINK): $(LKOBJECTS)
+@@ -103,11 +105,16 @@
+ 	  $(INSTALL) $(top_builddir)/bin/sdldgb$(EXEEXT) $(DESTDIR)$(bindir)/`echo 'sdldgb' | sed '$(transform)'`$(EXEEXT); \
+ 	  $(STRIP) $(DESTDIR)$(bindir)/`echo 'sdldgb' | sed '$(transform)'`$(EXEEXT); \
+ 	fi
++	if [ "`grep pdk $(top_builddir)/ports.build`" = "pdk" ]; \
++	then \
++	  $(INSTALL) $(top_builddir)/bin/sdldpdk$(EXEEXT) $(DESTDIR)$(bindir)/`echo 'sdldpdk' | sed '$(transform)'`$(EXEEXT); \
++	  $(STRIP) $(DESTDIR)$(bindir)/`echo 'sdldpdk' | sed '$(transform)'`$(EXEEXT); \
++	fi
+ 
+ # Deleting all the installed files
+ # --------------------------------
+ uninstall:
+-	for ld in $(top_builddir)/bin/sdld $(top_builddir)/bin/sdldz80 $(top_builddir)/bin/sdldgb $(top_builddir)/bin/sdldstm8 $(top_builddir)/bin/sdld6808; \
++	for ld in $(top_builddir)/bin/sdld $(top_builddir)/bin/sdldz80 $(top_builddir)/bin/sdldgb $(top_builddir)/bin/sdldstm8 $(top_builddir)/bin/sdld6808; $(top_builddir)/bin/sdldpdk; \
+ 	do \
+ 	  rm -f $(DESTDIR)$(bindir)/`echo \`basename $$ld\` | sed '$(transform)'`$(EXEEXT); \
+ 	done
+Index: sdas/linksrc/sdld.c
+===================================================================
+--- sdas/linksrc/sdld.c	(revision 10872)
++++ sdas/linksrc/sdld.c	(working copy)
+@@ -75,6 +75,7 @@
+     { "8051", TARGET_ID_8051, },
+     { "6808", TARGET_ID_6808, },
+     { "stm8", TARGET_ID_STM8, },
++    { "pdk",  TARGET_ID_PDK,   },
+   };
+   int i = NELEM (tgt);
+ 
+Index: sdas/linksrc/sdld.h
+===================================================================
+--- sdas/linksrc/sdld.h	(revision 10872)
++++ sdas/linksrc/sdld.h	(working copy)
+@@ -26,6 +26,7 @@
+   TARGET_ID_8051,
+   TARGET_ID_6808,
+   TARGET_ID_STM8,
++  TARGET_ID_PDK,
+ };
+ 
+ void sdld_init (char *path);
+@@ -40,5 +41,6 @@
+ #define TARGET_IS_8051  (get_sdld_target() == TARGET_ID_8051)
+ #define TARGET_IS_6808  (get_sdld_target() == TARGET_ID_6808)
+ #define TARGET_IS_STM8  (get_sdld_target() == TARGET_ID_STM8)
++#define TARGET_IS_PDK   (get_sdld_target() == TARGET_ID_PDK)
+ 
+ #endif  /* __SDLD_H */
 Index: src/pdk/main.c
 ===================================================================
---- src/pdk/main.c	(revision 10871)
+--- src/pdk/main.c	(revision 10872)
 +++ src/pdk/main.c	(working copy)
-@@ -163,13 +163,13 @@
+@@ -167,13 +167,13 @@
  */
  static const char *_linkCmd[] =
  {
