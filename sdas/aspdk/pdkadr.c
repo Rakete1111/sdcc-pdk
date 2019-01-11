@@ -90,6 +90,25 @@ addr(struct expr *esp)
                 esp->e_addr = 0;
                 break;
 
+        case 'p':
+                /* Pseudo-register in memory. */
+                esp->e_mode = S_M;
+
+                /* TODO: There must be a better way to do this. */
+                if ((c1 = getnb()) == '+') {
+                        if ((c = getnb()) != '1') {
+                                unget(c);
+                                unget(c1);
+                                unget('p');
+                                goto fallback;
+                        }
+                        esp->e_addr = 1;
+                } else {
+                        unget(c1);
+                        esp->e_addr = 0;
+                }
+                break;
+
         default:
         fallback:
                 unget(c);
