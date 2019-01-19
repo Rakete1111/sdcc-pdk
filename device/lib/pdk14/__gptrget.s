@@ -26,11 +26,12 @@
 ;  might be covered by the GNU General Public License.
 ;--------------------------------------------------------------------------
 
+.module __gptrget
 .area CODE
 
 __gptrget::
 	ceqsn	a, 0x80
-	t0sn	f.c
+	t0sn	f, c
 	goto	code
 
 	; Pointer to RAM

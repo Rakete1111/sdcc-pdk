@@ -1,3 +1,76 @@
+2019-01-18 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/pdk/gen.c:
+	  Fix !.
+
+2019-01-16 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/pdk/main.c:
+	  Switch default code location for bytewise addressing in ROM.
+
+2019-01-15 Philipp Klaus Krause <pkk AT spth.de>
+
+	* sdas/aspdk/pdk.h,
+	  sdas/aspdk/pdkadr.c,
+	  sdas/aspdk/pdkmch.c,
+	  sdas/aspdk/pdkpst.c:
+	  Assembler fixes, patch by Nicolas Lesser.
+	* src/pdk/main.c:
+	  Switch .org use to bytewise addressing in ROM.
+
+2019-01-12 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/pdk/main.c:
+	  Use sensible default for --code-loc.
+
+2019-01-12 Philipp Klaus Krause <pkk AT spth.de>
+
+	* src/pdk/main.c:
+	  Various glue code for program startup.
+
+2019-01-12 Philipp Klaus Krause <pkk AT spth.de>
+
+	* device/lib/time.c:
+	  Make some variables const so save RAM on targets that do not have __code.
+	* src/pdk/gen.c:
+	  Fix a segfault in code generation for &.
+	* sdas/aspdk/pdk.h,
+	  sdas/aspdk/pdkadr.c,
+	  sdas/aspdk/pdkmch.c:
+	  Assembler fixes and syntax change, patch by Nicolas Lesser.
+	* src/pdk/gen.c,
+	  device/lib/pdk14/__gptrget.s:
+	  Update for assembler syntax change.
+	* src/SDCCsymt.c,
+	  device/lib/Makefile.in,
+	  Enable build of pdk14 library.
+
+2019-01-11 Philipp Klaus Krause <pkk AT spth.de>
+
+	* device/lib/pdk14/Makefile.in:
+	  Use sdaspdk to build pdk14 library.
+	* src/pdk/main.c,
+	  src/pdk/gen.c:
+	  Fix generation of invalid asm in a few places.
+	* sdas/aspdk/pdkmch.c,
+	  sdas/aspdk/pdkpst.c:
+	  Assembler fixes, patch by Nicolas Lesser.
+	* support/regression/ports/pdk14/spec.mk:
+	  Prepare for future pdk14 regression testing.
+
+2019-01-11 Philipp Klaus Krause <pkk AT spth.de>
+
+	* sdas/aspdk,
+	  Makefile.common.in,
+	  Makefile.in,
+	  configure,
+	  configure.ac,
+	  sdas/linksrc/Makefile.in,
+	  sdas/linksrc/sdld.c,
+	  sdas/linksrc/sdld.h,
+	  src/pdk/main.c:
+	  Assembler for pdk14, patch by Nicolas Lesser.
+
 2019-01-11 Philipp Klaus Krause <pkk AT spth.de>
 
 	* src/pdk/main.c:
@@ -41022,4 +41095,4 @@
 	* as/mcs51/lklex.c:  accept everything as symbol name in rel-files, bug fix ID 452601
 	* as/mcs51/lksym.c:  accept everything as symbol name in rel-files, bug fix ID 452601
 
-$Revision: 10872 $
+$Revision: 10889 $

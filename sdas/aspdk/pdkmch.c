@@ -44,7 +44,7 @@ VOID
 machine(struct mne *mp)
 {
         a_uint op;
-        int t, t1, combine, combine1;
+        int t, t1, combine;
         struct expr e, e1, e2;
 
         clrexpr(&e);
@@ -52,7 +52,7 @@ machine(struct mne *mp)
         clrexpr(&e2);
 
         op = mp->m_valu;
-        combine = combine1 = 0;
+        combine = 0;
         switch (mp->m_type) {
 
         case S_MOV:
@@ -156,17 +156,17 @@ machine(struct mne *mp)
         case S_SL:
         case S_SR:
                 if (mp->m_type == S_SRC || mp->m_type == S_SLC)
-                        combine = 6;
+                        combine = 2;
                 if (mp->m_type == S_SL || mp->m_type == S_SLC)
-                        combine1 = 0x80;
+                        combine += 1;
 
                 t = addr(&e);
 
                 if (t == S_A) {
-                        op = (0x006A ^ combine) + (combine1 ? 1 : 0);
+                        op = 0x006A + combine;
                 } else
                 if (t == S_M) {
-                        op = (0x1500 ^ combine) | combine1;
+                        op = 0x1500 + (combine << 7);
                         op |= e.e_addr & 0x7F;
                 } else
                         aerr();
@@ -227,9 +227,8 @@ machine(struct mne *mp)
                 /* fallthrough */
         case S_SET0:
                 t = addr(&e);
-                if (getnb() != '.')
-                        aerr();
-                t1 = addr(&e1);
+                comma(1);
+                t1 = pdkbit(&e1);
                 if (t1 != S_K)
                         aerr();
 
@@ -275,9 +274,8 @@ machine(struct mne *mp)
                 /* fallthrough */
         case S_T0SN:
                 t = addr(&e);
-                if (getnb() != '.')
-                        aerr();
-                t1 = addr(&e1);
+                comma(1);
+                t1 = pdkbit(&e1);
                 if (t1 != S_K)
                         aerr();
 
@@ -335,6 +333,10 @@ machine(struct mne *mp)
         case S_CALL:
         case S_GOTO:
                 expr(&e, 0);
+                /* Since call and goto take an address in words, we need to
+                convert the byte address to a word address. */
+                e.e_addr /= 2;
+
                 op |= e.e_addr & 0xFF;
                 outaw(op);
                 break;
@@ -353,22 +355,62 @@ machine(struct mne *mp)
                 outaw(op);
                 break;
 
-        /* Simple instructions consisting of only one opcode and no args */
-        case S_LDT16:
-        case S_STT16:
         case S_PUSHAF:
         case S_POPAF:
+                if (more() && (op & 0x2000)) {
+                        if ((t = getnb()) != 'a')
+                                aerr();
+                        if (!more() || ((t1 = getnb()) != 'f'))
+                                aerr();
+                        op &= 0x1FFF;
+                }
+
+                outaw(op);
+                break;
+
+        case S_LDT16:
+        case S_STT16:
+                t = addr(&e);
+                if (t != S_M)
+                        aerr();
+
+                op |= e.e_addr & 0x7F;
+                outaw(op);
+                break;
+
         case S_SWAP:
+        case S_PCADD:
+              if (more()) {
+                      t = addr(&e);
+                      if (t != S_A)
+                              aerr();
+              }
+              outaw(op);
+              break;
+
+        case S_SWAPC:
+              t = addr(&e);
+              comma(1);
+              t1 = addr(&e1);
+              if (t != S_IO || t1 != S_K)
+                      aerr();
+
+              op |= e.e_addr & 0x3F;
+              op |= (e1.e_addr & 0x7) << 6;
+              outaw(op);
+              break;
+
+        /* Simple instructions consisting of only one opcode and no args */
         case S_RETI:
         case S_NOP:
-        case S_PCADD:
         case S_ENGINT:
         case S_DISGINT:
         case S_STOPSYS:
         case S_STOPEXE:
         case S_RESET:
         case S_WDRESET:
-        case S_SWAPC:
+        case S_LDSPTL: /* undocumented */
+        case S_LDSPTH: /* undocumented */
                 outaw(op);
                 break;
         }

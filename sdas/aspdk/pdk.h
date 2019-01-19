@@ -99,6 +99,8 @@
 #define S_WDRESET 92
 #define S_SWAPC   93
 #define S_CNEQSN  94 
+#define S_LDSPTL  95
+#define S_LDSPTH  96
 
 /*
  * Addressing modes.
@@ -114,6 +116,7 @@
         
         /* pdkaddr.c */
 extern  int             addr(struct expr *esp);
+extern  int             pdkbit(struct expr *esp);
 
         /* pdkmch.c */
 extern  VOID            machine(struct mne *mp);
@@ -124,6 +127,7 @@ extern  VOID            minit(void);
 
         /* pdkadr.c */
 extern  int             addr();
+extern  int             pdkbit();
 
         /* pdkmch.c */
 extern  VOID            machine();
