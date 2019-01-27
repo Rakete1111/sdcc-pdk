@@ -89,7 +89,7 @@ machine(struct mne *mp)
                 t1 = addr(&e1);
                 if (t == S_A && t1 == S_M) {
                         op |= 1;
-                        op |= e1.e_addr & 0x7F;
+                        op |= (e1.e_addr & 0x7F) << 1;
                 } else
                 if (t == S_M && t1 == S_A) {
                         op |= (e.e_addr & 0x7F) << 1;
@@ -313,7 +313,7 @@ machine(struct mne *mp)
                         t = addr(&e);
                         if (t != S_K)
                                 aerr();
-                        op |= e.e_addr & 0xFF;
+                        op = 0x200 | (e.e_addr & 0xFF);
                 }
 
                 outaw(op);
@@ -333,12 +333,7 @@ machine(struct mne *mp)
         case S_CALL:
         case S_GOTO:
                 expr(&e, 0);
-                /* Since call and goto take an address in words, we need to
-                convert the byte address to a word address. */
-                e.e_addr /= 2;
-
-                op |= e.e_addr & 0xFF;
-                outaw(op);
+                outrwp(&e, op);
                 break;
 
         case S_XCH:
@@ -374,7 +369,7 @@ machine(struct mne *mp)
                 if (t != S_M)
                         aerr();
 
-                op |= e.e_addr & 0x7F;
+                op |= (e.e_addr & 0x7F) << 1;
                 outaw(op);
                 break;
 

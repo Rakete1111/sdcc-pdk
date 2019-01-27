@@ -1,3 +1,43 @@
+2019-01-27 Philipp Klaus Krause <pkk AT spth.de>
+
+	* sdas/aspdk/pdkmch.c:
+	  Fix idxm, patch by Tim (cpldcpu).
+	* device/lib/pdk14/Makefile.in:
+	  Use generic memcpy(), unsigned 8 x 8 -> 16 multiplication and unsigned division for pdk14.
+	* src/pdk/main.c:
+	  Fix int x int -> long multiplication.
+	* src/pdk/main.c,
+	  src/pdk/gen.c:
+	  Code generation for 8 x 8 (lit) -> 8 multiplication.
+	* configure,
+	  configure.ac,
+	  src/SDCCmain.c,
+	  src/pdk/main.c,
+	  src/pdk/ralloc2.cc,
+	  src/port.h:
+	  Infrastructure for pdk13, pdk15.
+
+2019-01-27 Philipp Klaus Krause <pkk AT spth.de>
+
+	* aspdk/pdkmch.c,
+	  asxxsrc/asout.c,
+	  asxxsrc/asxxxx.h,
+	  asxxsrc/sdas.c,
+	  asxxsrc/sdas.h,
+	  linksrc/lkrloc3.c:
+	  Linker and assembler fixes for pdk14, patch by Nicolas Lesser.
+	* src/pdk/gen.c:
+	  Fix code generation for unary float minus and calls to functions returning more than a word.
+	* device/lib/pdk14/__gptrget.s:
+	  Asm syntax fix.
+
+2019-01-19 Philipp Klaus Krause <pkk AT spth.de>
+
+	* sdas/aspdk/pdkmch.c:
+	  Fix shifts, patch by Tim (cpldcpu).
+	* src/pdk/gen.c:
+	  Fix signed comparison, fix pointer write with integer literal cast to pointer.
+
 2019-01-18 Philipp Klaus Krause <pkk AT spth.de>
 
 	* src/pdk/gen.c:
@@ -41095,4 +41135,4 @@
 	* as/mcs51/lklex.c:  accept everything as symbol name in rel-files, bug fix ID 452601
 	* as/mcs51/lksym.c:  accept everything as symbol name in rel-files, bug fix ID 452601
 
-$Revision: 10889 $
+$Revision: 10899 $
